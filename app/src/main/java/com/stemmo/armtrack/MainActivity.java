@@ -8,24 +8,29 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
-import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
 
+/**
+ * Applicazione per testare la lettura degli accelerometri
+ * @author SM
+ */
 public class MainActivity extends Activity implements SensorEventListener {
 
     private SensorManager senSensorManager;
     private Sensor senAccelerometer;
     private Sensor senGyro;
+
     private TextView txtAccelX, txtAccelY, txtAccelZ;
     private boolean isRecording = false;
     private Context ctxt;
-    private View thisView;
+    private SensorEventListener sensList;
+    private Button btnStart, btnStop;
 
 
     @Override
@@ -36,7 +41,32 @@ public class MainActivity extends Activity implements SensorEventListener {
         // Toolbar toolbar = findViewById(R.id.toolbar);
         // setSupportActionBar(toolbar);
 
+        // Bottone START
+        btnStart = findViewById(R.id.btnStart);
+        btnStart.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                senSensorManager.registerListener( sensList, senAccelerometer , SensorManager.SENSOR_DELAY_NORMAL);
+                btnStart.setEnabled(false);
+                btnStop.setEnabled(true);
+            }
+        });
+
+        // bottone STOP
+        btnStop = findViewById(R.id.btnStop);
+        btnStop.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                senSensorManager.unregisterListener(sensList);
+                btnStart.setEnabled(true);
+                btnStop.setEnabled(false);
+            }
+        });
+        btnStop.setEnabled(false);
+
+
         ctxt = getApplicationContext();
+        sensList=this;
 
         FloatingActionButton fab = findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
@@ -47,27 +77,35 @@ public class MainActivity extends Activity implements SensorEventListener {
 
                 if(isRecording) {
                     Toast.makeText( ctxt, "Stopped", Toast.LENGTH_SHORT);
-                    senSensorManager.unregisterListener(senAccelerometer);
+                    senSensorManager.unregisterListener(sensList);
                 }
                 else {
                     Toast.makeText( ctxt, "Started", Toast.LENGTH_SHORT);
-                    senSensorManager.registerListener(this, senAccelerometer , SensorManager.SENSOR_DELAY_NORMAL);
+                    senSensorManager.registerListener( sensList, senAccelerometer , SensorManager.SENSOR_DELAY_NORMAL);
                 }
             }
         });
 
+        // Campi output dei valori accelerometri
         txtAccelX = findViewById(R.id.txtAccelX);
         txtAccelY = findViewById(R.id.txtAccelY);
         txtAccelZ = findViewById(R.id.txtAccelZ);
 
+        // Attivazione servizi sensori accelerometro e giroscopio
         senSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
 
         senAccelerometer = senSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         senGyro = senSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
-
-        senSensorManager.registerListener(this, senAccelerometer , SensorManager.SENSOR_DELAY_NORMAL);
     }
 
+
+    /**
+     *
+     */
+    protected void onPause(){
+        super.onPause();
+        senSensorManager.unregisterListener(this);
+    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
